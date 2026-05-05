@@ -11,8 +11,6 @@ import org.lwjgl.system.Pointer;
 import org.lwjgl.system.windows.User32;
 import org.lwjgl.system.windows.WindowProc;
 
-import java.util.Locale;
-
 final class WindowMessageFix {
     private static final long SYS_COMMAND_MASK = 0xFFF0L;
     private static final int MIM_STYLE = 0x00000010;
@@ -32,6 +30,8 @@ final class WindowMessageFix {
     private static boolean installAttempted;
     private static boolean installed;
     private static boolean modelessMenuConfigured;
+    private static boolean nativeSystemMenuPending;
+    private static boolean nativeSystemMenuActive;
     private static long originalWindowProc;
     private static WindowProc hookProc;
 
@@ -86,21 +86,43 @@ final class WindowMessageFix {
         boolean blockMenu = WindowfixConfig.shouldBlockTitlebarSystemMenu();
         if (!blockMenu) {
             configureSystemMenuModeless(hwnd);
+        } else {
+            nativeSystemMenuPending = false;
+            nativeSystemMenuActive = false;
         }
 
         if (blockMenu
             && (message == User32.WM_NCRBUTTONDOWN || message == User32.WM_NCRBUTTONUP)
             && wParam == User32.HTCAPTION) {
-            // Suppress title-bar right-click system menu to avoid the Win32 modal menu loop.
+            // Suppress title-bar right-click system menu when blocking native menu.
             GLFW.glfwPostEmptyEvent();
             return 0L;
         }
 
+        long command = wParam & SYS_COMMAND_MASK;
+        if (!blockMenu && message == User32.WM_SYSCOMMAND && (command == User32.SC_MOUSEMENU || command == User32.SC_KEYMENU)) {
+            nativeSystemMenuPending = true;
+            GLFW.glfwPostEmptyEvent();
+        }
+
         if (blockMenu && message == User32.WM_SYSCOMMAND) {
-            long command = wParam & SYS_COMMAND_MASK;
             if (command == User32.SC_MOUSEMENU || command == User32.SC_KEYMENU) {
                 GLFW.glfwPostEmptyEvent();
                 return 0L;
+            }
+        }
+
+        if (!blockMenu && WindowfixConfig.shouldKeepActiveDuringSystemMenu()) {
+            if (message == User32.WM_ENTERMENULOOP) {
+                nativeSystemMenuActive = true;
+            } else if (message == User32.WM_EXITMENULOOP) {
+                nativeSystemMenuPending = false;
+                nativeSystemMenuActive = false;
+            }
+
+            if ((nativeSystemMenuPending || nativeSystemMenuActive) && shouldSuppressTransientFocusLoss(message, wParam)) {
+                GLFW.glfwPostEmptyEvent();
+                return message == User32.WM_NCACTIVATE ? 1L : 0L;
             }
         }
 
@@ -117,7 +139,6 @@ final class WindowMessageFix {
         }
 
         if (message == User32.WM_SYSCOMMAND) {
-            long command = wParam & SYS_COMMAND_MASK;
             if (command == User32.SC_CLOSE || command == User32.SC_MINIMIZE || command == User32.SC_MAXIMIZE || command == User32.SC_RESTORE) {
                 GLFW.glfwPostEmptyEvent();
             }
@@ -189,5 +210,22 @@ final class WindowMessageFix {
     private static int align(int value, int alignment) {
         int mask = alignment - 1;
         return (value + mask) & ~mask;
+    }
+
+    private static boolean shouldSuppressTransientFocusLoss(int message, long wParam) {
+        if (message == User32.WM_ACTIVATE) {
+            return lowWord(wParam) == User32.WA_INACTIVE;
+        }
+        if (message == User32.WM_ACTIVATEAPP || message == User32.WM_KILLFOCUS) {
+            return wParam == 0L || message == User32.WM_KILLFOCUS;
+        }
+        if (message == User32.WM_NCACTIVATE) {
+            return wParam == 0L;
+        }
+        return false;
+    }
+
+    private static int lowWord(long value) {
+        return (int) (value & 0xFFFFL);
     }
 }

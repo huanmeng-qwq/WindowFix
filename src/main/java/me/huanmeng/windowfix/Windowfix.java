@@ -21,6 +21,7 @@ public class Windowfix {
         if (!isWindows()) {
             return;
         }
+        //noinspection removal
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, WindowfixConfig.SPEC);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             MinecraftForge.EVENT_BUS.addListener(Windowfix::onClientTick);

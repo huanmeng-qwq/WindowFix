@@ -12,10 +12,10 @@
 
 本项目提供两种模式，通过客户端配置切换：
 
-1. `blockTitleBarSystemMenu = true`（默认，稳定优先）
+1. 阻止原生系统菜单（稳定优先）
 阻止标题栏右键系统菜单弹出，从根源避免进入 Win32 菜单模态循环。
 
-2. `blockTitleBarSystemMenu = false`（原生兼容模式）
+2. 原生兼容模式
 保留标题栏右键菜单，同时对系统菜单启用原生 `MNS_MODELESS`，降低菜单打开时主循环被阻塞的概率。
 
 ## 配置
@@ -27,10 +27,19 @@
 示例：
 
 ```toml
-blockTitleBarSystemMenu = true
+blockTitleBarSystemMenu = false
+keepActiveDuringSystemMenu = true
 ```
 
 切换配置后建议重启游戏生效。
+
+- `blockTitleBarSystemMenu`
+  - `true`：禁用标题栏右键系统菜单。
+  - `false`：启用原生兼容模式，保留右键菜单。
+- `keepActiveDuringSystemMenu`
+  - 仅在 `blockTitleBarSystemMenu = false` 时生效。
+  - `true`：抑制系统菜单期间的瞬时失焦消息，减少“卡一下”。
+  - `false`：保留系统默认失焦行为。
 
 ## 构建
 
@@ -47,7 +56,7 @@ Windows:
 ## 使用
 
 1. 构建后将产物 JAR 放入客户端 `mods` 目录。
-2. 启动游戏，按需调整 `config/windowfix-client.toml` 中的 `blockTitleBarSystemMenu`。
+2. 启动游戏，按需调整 `config/windowfix-client.toml`。
 
 ## 日志关键字
 
