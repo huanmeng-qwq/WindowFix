@@ -1,47 +1,49 @@
-﻿# WindowFix
+# WindowFix
 
-用于修复 Minecraft 在 Windows 下，操作窗口标题栏系统菜单（右键标题栏、最小化、恢复等）后可能出现的主循环挂起/卡住问题。
+[English](README.md) | [简体中文](README_ZH_CN.md)
 
-## 适用环境
+WindowFix addresses a Windows-specific Minecraft issue where interacting with the title-bar system menu (right-click title bar, minimize, restore, etc.) may cause the game loop to hang or stutter.
+
+## Environment
 
 - Minecraft `1.20.1`
 - Forge `47.4.20`
-- Windows 客户端
+- Windows client
 
-## 修复模式
+## Fix Modes
 
-本项目提供两种模式，通过客户端配置切换：
+WindowFix provides two modes via client config:
 
-1. 阻止原生系统菜单（稳定优先）
-阻止标题栏右键系统菜单弹出，从根源避免进入 Win32 菜单模态循环。
+1. Block native system menu (stability-first)  
+Blocks title-bar right-click system menu entirely to avoid entering the Win32 menu modal loop.
 
-2. 原生兼容模式
-保留标题栏右键菜单，同时对系统菜单启用原生 `MNS_MODELESS`，降低菜单打开时主循环被阻塞的概率。
+2. Native compatibility mode  
+Keeps native right-click system menu and enables `MNS_MODELESS` to reduce blocking likelihood.
 
-## 配置
+## Configuration
 
-启动一次游戏后会生成配置文件：
+Config file is generated after first launch:
 
 `config/windowfix-client.toml`
 
-示例：
+Example:
 
 ```toml
 blockTitleBarSystemMenu = false
 keepActiveDuringSystemMenu = true
 ```
 
-切换配置后建议重启游戏生效。
+Restart the game after changing config values.
 
 - `blockTitleBarSystemMenu`
-  - `true`：禁用标题栏右键系统菜单。
-  - `false`：启用原生兼容模式，保留右键菜单。
+  - `true`: Disable title-bar right-click native system menu.
+  - `false`: Keep native system menu behavior.
 - `keepActiveDuringSystemMenu`
-  - 仅在 `blockTitleBarSystemMenu = false` 时生效。
-  - `true`：抑制系统菜单期间的瞬时失焦消息，减少“卡一下”。
-  - `false`：保留系统默认失焦行为。
+  - Only effective when `blockTitleBarSystemMenu = false`.
+  - `true`: Suppress transient focus-loss messages during system menu operations to reduce brief hitching.
+  - `false`: Keep default focus behavior.
 
-## 构建
+## Build
 
 Windows:
 
@@ -49,23 +51,23 @@ Windows:
 .\gradlew.bat build
 ```
 
-产物路径：
+Output:
 
 `build/libs/`
 
-## 使用
+## Usage
 
-1. 构建后将产物 JAR 放入客户端 `mods` 目录。
-2. 启动游戏，按需调整 `config/windowfix-client.toml`。
+1. Put the built JAR into your client `mods` directory.
+2. Launch the game and adjust `config/windowfix-client.toml` as needed.
 
-## 日志关键字
+## Log Keywords
 
-可在 `latest.log` 中搜索以下关键字确认行为：
+Search these in `latest.log`:
 
 - `Installed Win32 window hook for system menu freeze workaround.`
 - `Enabled MNS_MODELESS on system menu.`
 
-## 已知限制
+## Known Limitations
 
-- 仅对 Windows 生效。
-- 原生兼容模式受系统环境和窗口管理行为影响，如仍出现卡住，建议切回 `blockTitleBarSystemMenu = true`。
+- Windows-only behavior.
+- In native compatibility mode, brief hitching may still happen depending on system window management behavior.
