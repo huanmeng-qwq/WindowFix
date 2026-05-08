@@ -11,7 +11,7 @@ import org.lwjgl.system.Pointer;
 import org.lwjgl.system.windows.User32;
 import org.lwjgl.system.windows.WindowProc;
 
-final class WindowMessageFix {
+public final class WindowMessageFix {
     private static final long SYS_COMMAND_MASK = 0xFFF0L;
     private static final int MIM_STYLE = 0x00000010;
     private static final int MNS_MODELESS = 0x40000000;
@@ -38,7 +38,7 @@ final class WindowMessageFix {
     private WindowMessageFix() {
     }
 
-    static void tryInstall() {
+    public static void tryInstall() {
         if (installed || installAttempted) {
             return;
         }
@@ -51,8 +51,11 @@ final class WindowMessageFix {
         if (minecraft == null || minecraft.getWindow() == null) {
             return;
         }
-
-        long glfwWindow = minecraft.getWindow().getWindow();
+        /*? if forgeLike && >= 1.21.9 {*/
+        long glfwWindow = minecraft.getWindow().handle();
+        /*?} else {*/
+        /*long glfwWindow = minecraft.getWindow().getWindow();
+        *//*?}*/
         if (glfwWindow == 0L) {
             return;
         }

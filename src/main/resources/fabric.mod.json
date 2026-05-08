@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "authors": [
+    "huanmeng_qwq"
+  ],
+  "contact": {
+    "sources": "https://github.com/huanmeng-qwq/WindowFix",
+    "issues": "https://github.com/huanmeng-qwq/WindowFix/issues"
+  },
+  "license": "AGPL-3.0-only",
+  "icon": "assets/windowfix/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.huanmeng.windowfix.Windowfix"
+    ]
+  },
+  "mixins": [
+  ],
+  "depends": {
+    "minecraft": "*"
+  }
+}

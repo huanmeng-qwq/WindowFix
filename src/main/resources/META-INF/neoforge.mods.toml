@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[1,99)"
+loaderVersion = "[2,)"
 license = "AGPL-3.0-only"
 issueTrackerURL = "https://github.com/huanmeng-qwq/WindowFix/issues"
 
