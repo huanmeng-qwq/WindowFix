@@ -6,8 +6,7 @@
 
 ## 适用环境
 
-- Minecraft `1.20.1`
-- Forge `47.4.20`
+- Minecraft `1.20.x ~ 1.21.x`
 - Windows 客户端
 
 ## 修复模式
