@@ -69,24 +69,24 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, WindowfixConfig.SPEC);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             /^? if <= 1.21.5 { ^/
-              MinecraftForge.EVENT_BUS.addListener(Windowfix::onClientTick);
-            /^?} else {^/
-            /^TickEvent.ClientTickEvent.Post.BUS.addListener(this::onClientTick);
-            ^//^?}^/
+              /^MinecraftForge.EVENT_BUS.addListener(Windowfix::onClientTick);
+            ^//^?} else {^/
+            TickEvent.ClientTickEvent.Post.BUS.addListener(this::onClientTick);
+            /^?}^/
         }
     }
 
     /^? if <= 1.21.5 {^/
-    private static void onClientTick(TickEvent.ClientTickEvent event) {
+    /^private static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             WindowMessageFix.tryInstall();
         }
     }
-    /^?} else {^/
-    /^public void onClientTick(TickEvent.ClientTickEvent.Post event) {
+    ^//^?} else {^/
+    public void onClientTick(TickEvent.ClientTickEvent.Post event) {
         WindowMessageFix.tryInstall();
     }
-    ^//^?}^/
+    /^?}^/
     *//*?}*/
 
     /*? if neoforge && <1.20.5 {*/

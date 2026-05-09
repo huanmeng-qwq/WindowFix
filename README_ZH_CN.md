@@ -6,7 +6,7 @@
 
 ## 适用环境
 
-- Minecraft `1.20.x ~ 1.21.x`
+- Minecraft `1.20.x ~ 26.x`
 - Windows 客户端
 
 ## 修复模式

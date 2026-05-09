@@ -6,7 +6,7 @@ WindowFix addresses a Windows-specific Minecraft issue where interacting with th
 
 ## Environment
 
-- Minecraft `1.20.x ~ 1.21.x`
+- Minecraft `1.20.x ~ 26.x`
 - Windows client
 
 ## Fix Modes

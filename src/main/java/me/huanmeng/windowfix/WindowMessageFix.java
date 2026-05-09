@@ -51,7 +51,7 @@ public final class WindowMessageFix {
         if (minecraft == null || minecraft.getWindow() == null) {
             return;
         }
-        /*? if forgeLike && >= 1.21.9 {*/
+        /*? if (forgeLike && >= 1.21.9) || >= 26.1 {*/
         long glfwWindow = minecraft.getWindow().handle();
         /*?} else {*/
         /*long glfwWindow = minecraft.getWindow().getWindow();
@@ -68,7 +68,10 @@ public final class WindowMessageFix {
         try {
             hookProc = WindowProc.create((windowHandle, message, wParam, lParam) ->
                 handleMessage(windowHandle, message, wParam, lParam));
-            originalWindowProc = User32.SetWindowLongPtr(hwnd, User32.GWL_WNDPROC, hookProc.address());
+            //? if >= 26.1 {
+            originalWindowProc = User32.SetWindowLongPtr(null, hwnd, User32.GWL_WNDPROC, hookProc.address());
+            //? } else
+            //originalWindowProc = User32.SetWindowLongPtr(hwnd, User32.GWL_WNDPROC, hookProc.address());
             installed = true;
             installAttempted = true;
             Windowfix.LOGGER.info("Installed Win32 window hook for system menu freeze workaround.");
