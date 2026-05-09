@@ -52,7 +52,7 @@ Windows:
 
 产物路径：
 
-`build/libs/`
+`versions/xxx/build/libs/`
 
 ## 使用
 

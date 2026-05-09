@@ -52,7 +52,7 @@ Windows:
 
 Output:
 
-`build/libs/`
+`versions/xxx/build/libs/`
 
 ## Usage
 
