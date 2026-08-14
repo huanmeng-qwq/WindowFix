@@ -9,16 +9,6 @@ WindowFix addresses a Windows-specific Minecraft issue where interacting with th
 - Minecraft `1.20.x ~ 26.x`
 - Windows client
 
-## Fix Modes
-
-WindowFix provides two modes via client config:
-
-1. Block native system menu (stability-first)  
-Blocks title-bar right-click system menu entirely to avoid entering the Win32 menu modal loop.
-
-2. Native compatibility mode  
-Keeps native right-click system menu and enables `MNS_MODELESS` to reduce blocking likelihood.
-
 ## Configuration
 
 Config file is generated after first launch:
@@ -34,8 +24,8 @@ blockTitleBarSystemMenu = false
 Restart the game after changing config values.
 
 - `blockTitleBarSystemMenu`
-  - `true`: Disable title-bar right-click native system menu.
-  - `false`: Keep native system menu behavior.
+  - `true`: Block the title-bar system menu for maximum stability.
+  - `false`: Keep the system menu and enable native `MNS_MODELESS` compatibility handling.
 
 The legacy `keepActiveDuringSystemMenu` option has been removed. Focus messages are now always forwarded to GLFW/Minecraft so their input state stays consistent with the actual window focus.
 

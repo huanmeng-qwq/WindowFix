@@ -9,16 +9,6 @@
 - Minecraft `1.20.x ~ 26.x`
 - Windows 客户端
 
-## 修复模式
-
-本项目提供两种模式，通过客户端配置切换：
-
-1. 阻止原生系统菜单（稳定优先）
-阻止标题栏右键系统菜单弹出，从根源避免进入 Win32 菜单模态循环。
-
-2. 原生兼容模式
-保留标题栏右键菜单，同时对系统菜单启用原生 `MNS_MODELESS`，降低菜单打开时主循环被阻塞的概率。
-
 ## 配置
 
 启动一次游戏后会生成配置文件：
@@ -34,8 +24,8 @@ blockTitleBarSystemMenu = false
 切换配置后建议重启游戏生效。
 
 - `blockTitleBarSystemMenu`
-  - `true`：禁用标题栏右键系统菜单。
-  - `false`：启用原生兼容模式，保留右键菜单。
+  - `true`：阻止标题栏右键系统菜单，稳定性优先。
+  - `false`：保留系统菜单，并启用原生 `MNS_MODELESS` 兼容处理。
 
 旧版的 `keepActiveDuringSystemMenu` 配置已移除。窗口焦点消息现在始终交给 GLFW/Minecraft 正常处理，避免输入状态与实际窗口焦点不一致。
 
