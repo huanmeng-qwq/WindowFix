@@ -29,9 +29,8 @@ public final class WindowMessageFix {
 
     private static boolean installAttempted;
     private static boolean installed;
-    private static boolean modelessMenuConfigured;
-    private static boolean nativeSystemMenuPending;
-    private static boolean nativeSystemMenuActive;
+    private static boolean modelessMenuConfigurationAttempted;
+    private static boolean callbackFailureLogged;
     private static long originalWindowProc;
     private static WindowProc hookProc;
 
@@ -66,12 +65,16 @@ public final class WindowMessageFix {
         }
 
         try {
-            hookProc = WindowProc.create((windowHandle, message, wParam, lParam) ->
-                handleMessage(windowHandle, message, wParam, lParam));
+            hookProc = WindowProc.create(WindowMessageFix::dispatchMessage);
             //? if >= 26.1 {
             originalWindowProc = User32.SetWindowLongPtr(null, hwnd, User32.GWL_WNDPROC, hookProc.address());
             //? } else
             //originalWindowProc = User32.SetWindowLongPtr(hwnd, User32.GWL_WNDPROC, hookProc.address());
+            if (originalWindowProc == 0L) {
+                hookProc.free();
+                hookProc = null;
+                throw new IllegalStateException("SetWindowLongPtr returned a null previous window procedure.");
+            }
             installed = true;
             installAttempted = true;
             Windowfix.LOGGER.info("Installed Win32 window hook for system menu freeze workaround.");
@@ -88,65 +91,63 @@ public final class WindowMessageFix {
         return Windowfix.isWindows();
     }
 
+    private static long dispatchMessage(long hwnd, int message, long wParam, long lParam) {
+        try {
+            return handleMessage(hwnd, message, wParam, lParam);
+        } catch (Throwable throwable) {
+            if (!callbackFailureLogged) {
+                callbackFailureLogged = true;
+                try {
+                    Windowfix.LOGGER.error("Unhandled error in Win32 window hook; forwarding to the original procedure.", throwable);
+                } catch (Throwable ignored) {
+                }
+            }
+            return callOriginal(hwnd, message, wParam, lParam);
+        }
+    }
+
     private static long handleMessage(long hwnd, int message, long wParam, long lParam) {
         boolean blockMenu = WindowfixConfig.shouldBlockTitlebarSystemMenu();
         if (!blockMenu) {
             configureSystemMenuModeless(hwnd);
-        } else {
-            nativeSystemMenuPending = false;
-            nativeSystemMenuActive = false;
         }
 
         if (blockMenu
             && (message == User32.WM_NCRBUTTONDOWN || message == User32.WM_NCRBUTTONUP)
             && wParam == User32.HTCAPTION) {
             // Suppress title-bar right-click system menu when blocking native menu.
-            GLFW.glfwPostEmptyEvent();
+            postEmptyEvent();
             return 0L;
         }
 
         long command = wParam & SYS_COMMAND_MASK;
-        if (!blockMenu && message == User32.WM_SYSCOMMAND && (command == User32.SC_MOUSEMENU || command == User32.SC_KEYMENU)) {
-            nativeSystemMenuPending = true;
-            GLFW.glfwPostEmptyEvent();
-        }
-
         if (blockMenu && message == User32.WM_SYSCOMMAND) {
             if (command == User32.SC_MOUSEMENU || command == User32.SC_KEYMENU) {
-                GLFW.glfwPostEmptyEvent();
+                postEmptyEvent();
                 return 0L;
-            }
-        }
-
-        if (!blockMenu && WindowfixConfig.shouldKeepActiveDuringSystemMenu()) {
-            if (message == User32.WM_ENTERMENULOOP) {
-                nativeSystemMenuActive = true;
-            } else if (message == User32.WM_EXITMENULOOP) {
-                nativeSystemMenuPending = false;
-                nativeSystemMenuActive = false;
-            }
-
-            if ((nativeSystemMenuPending || nativeSystemMenuActive) && shouldSuppressTransientFocusLoss(message, wParam)) {
-                GLFW.glfwPostEmptyEvent();
-                return message == User32.WM_NCACTIVATE ? 1L : 0L;
             }
         }
 
         long result = callOriginal(hwnd, message, wParam, lParam);
 
+        if (message == User32.WM_NCDESTROY) {
+            resetHookState();
+            return result;
+        }
+
         if (message == User32.WM_ENTERMENULOOP || message == User32.WM_ENTERSIZEMOVE) {
-            GLFW.glfwPostEmptyEvent();
+            postEmptyEvent();
             return result;
         }
 
         if (message == User32.WM_EXITMENULOOP || message == User32.WM_EXITSIZEMOVE) {
-            GLFW.glfwPostEmptyEvent();
+            postEmptyEvent();
             return result;
         }
 
         if (message == User32.WM_SYSCOMMAND) {
             if (command == User32.SC_CLOSE || command == User32.SC_MINIMIZE || command == User32.SC_MAXIMIZE || command == User32.SC_RESTORE) {
-                GLFW.glfwPostEmptyEvent();
+                postEmptyEvent();
             }
         }
 
@@ -161,10 +162,13 @@ public final class WindowMessageFix {
     }
 
     private static void configureSystemMenuModeless(long hwnd) {
-        if (modelessMenuConfigured) {
+        if (modelessMenuConfigurationAttempted) {
             return;
         }
+        modelessMenuConfigurationAttempted = true;
+
         if (PFN_GET_SYSTEM_MENU == 0L || PFN_GET_MENU_INFO == 0L || PFN_SET_MENU_INFO == 0L) {
+            Windowfix.LOGGER.warn("Required Win32 system-menu functions are unavailable; keeping default menu behavior.");
             return;
         }
 
@@ -185,7 +189,6 @@ public final class WindowMessageFix {
 
             int style = MemoryUtil.memGetInt(menuInfo + MENUINFO_DWSTYLE);
             if ((style & MNS_MODELESS) != 0) {
-                modelessMenuConfigured = true;
                 return;
             }
 
@@ -197,7 +200,6 @@ public final class WindowMessageFix {
                 return;
             }
 
-            modelessMenuConfigured = true;
             Windowfix.LOGGER.info("Enabled MNS_MODELESS on system menu.");
         } catch (Throwable throwable) {
             Windowfix.LOGGER.warn("Failed to apply MNS_MODELESS system menu mode.", throwable);
@@ -218,20 +220,25 @@ public final class WindowMessageFix {
         return (value + mask) & ~mask;
     }
 
-    private static boolean shouldSuppressTransientFocusLoss(int message, long wParam) {
-        if (message == User32.WM_ACTIVATE) {
-            return lowWord(wParam) == User32.WA_INACTIVE;
+    private static void postEmptyEvent() {
+        try {
+            GLFW.glfwPostEmptyEvent();
+        } catch (Throwable throwable) {
+            if (!callbackFailureLogged) {
+                callbackFailureLogged = true;
+                try {
+                    Windowfix.LOGGER.error("Failed to wake the GLFW event loop from the Win32 window hook.", throwable);
+                } catch (Throwable ignored) {
+                }
+            }
         }
-        if (message == User32.WM_ACTIVATEAPP || message == User32.WM_KILLFOCUS) {
-            return wParam == 0L || message == User32.WM_KILLFOCUS;
-        }
-        if (message == User32.WM_NCACTIVATE) {
-            return wParam == 0L;
-        }
-        return false;
     }
 
-    private static int lowWord(long value) {
-        return (int) (value & 0xFFFFL);
+    private static void resetHookState() {
+        installed = false;
+        installAttempted = false;
+        modelessMenuConfigurationAttempted = false;
+        callbackFailureLogged = false;
+        originalWindowProc = 0L;
     }
 }

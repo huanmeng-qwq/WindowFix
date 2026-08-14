@@ -29,7 +29,6 @@
 
 ```toml
 blockTitleBarSystemMenu = false
-keepActiveDuringSystemMenu = true
 ```
 
 切换配置后建议重启游戏生效。
@@ -37,10 +36,8 @@ keepActiveDuringSystemMenu = true
 - `blockTitleBarSystemMenu`
   - `true`：禁用标题栏右键系统菜单。
   - `false`：启用原生兼容模式，保留右键菜单。
-- `keepActiveDuringSystemMenu`
-  - 仅在 `blockTitleBarSystemMenu = false` 时生效。
-  - `true`：抑制系统菜单期间的瞬时失焦消息，减少“卡一下”。
-  - `false`：保留系统默认失焦行为。
+
+旧版的 `keepActiveDuringSystemMenu` 配置已移除。窗口焦点消息现在始终交给 GLFW/Minecraft 正常处理，避免输入状态与实际窗口焦点不一致。
 
 ## 构建
 

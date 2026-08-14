@@ -29,7 +29,6 @@ Example:
 
 ```toml
 blockTitleBarSystemMenu = false
-keepActiveDuringSystemMenu = true
 ```
 
 Restart the game after changing config values.
@@ -37,10 +36,8 @@ Restart the game after changing config values.
 - `blockTitleBarSystemMenu`
   - `true`: Disable title-bar right-click native system menu.
   - `false`: Keep native system menu behavior.
-- `keepActiveDuringSystemMenu`
-  - Only effective when `blockTitleBarSystemMenu = false`.
-  - `true`: Suppress transient focus-loss messages during system menu operations to reduce brief hitching.
-  - `false`: Keep default focus behavior.
+
+The legacy `keepActiveDuringSystemMenu` option has been removed. Focus messages are now always forwarded to GLFW/Minecraft so their input state stays consistent with the actual window focus.
 
 ## Build
 
